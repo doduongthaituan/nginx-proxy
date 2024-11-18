@@ -1,0 +1,45 @@
+volumes:
+  nginx_proxy_manager_data:
+  letsencrypt:
+
+services:
+  nginx-proxy-manager:
+    image: jc21/nginx-proxy-manager:2.9.22
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "81:81"
+      - "443:443"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:81/"]
+      interval: 10s
+      timeout: 3s
+    volumes:
+      - nginx_proxy_manager_data:/data
+      - letsencrypt:/etc/letsencrypt
+    environment:
+      # These are the settings to access your db
+      DB_MYSQL_HOST: "db"
+      DB_MYSQL_PORT: 3306
+      DB_MYSQL_USER: "npm"
+      DB_MYSQL_PASSWORD: "npm" # use secret instead
+      DB_MYSQL_NAME: "npm"
+    depends_on:
+      - db
+
+  db:
+    image: jc21/mariadb-aria
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: "npm" # use secret instead
+      MYSQL_DATABASE: "npm"
+      MYSQL_USER: "npm"
+      MYSQL_PASSWORD: "npm" # use secret instead
+      MARIADB_AUTO_UPGRADE: "1"
+    volumes:
+      - ./mysql:/var/lib/mysql
+
+networks:
+  default:
+    external: true
+    name: scoobydoo
